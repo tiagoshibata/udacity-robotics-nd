@@ -5,16 +5,9 @@ vision = Vision()
 
 
 def perception_step(Rover):
-    # 1) Define source and destination points for perspective transform
-    # 2) Apply perspective transform
-    # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
-    # 4) Update Rover.vision_image (this will be displayed on left side of screen)
-    # Example: Rover.vision_image[:,:,0] = obstacle color-thresholded binary image
-    #          Rover.vision_image[:,:,1] = rock_sample color-thresholded binary image
-    #          Rover.vision_image[:,:,2] = navigable terrain color-thresholded binary image
-    obstacles, rocks, navigable = vision.process(Rover.img)
-    Rover.vision_image[:, :, 0] = 255 * obstacles
-    Rover.vision_image[:, :, 1] = 255 * rocks
+    obstacle, rock, navigable = vision.process(Rover.img)
+    Rover.vision_image[:, :, 0] = 255 * obstacle
+    Rover.vision_image[:, :, 1] = 255 * rock
     Rover.vision_image[:, :, 2] = 255 * navigable
 
     # 5) Convert map image pixel values to rover-centric coords
@@ -24,8 +17,14 @@ def perception_step(Rover):
     #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
     #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
     rover_navigable = transform.image_to_rover(navigable)
-    world_navigable_x, world_navigable_y = transform.to_world(*rover_navigable, *Rover.pos, Rover.yaw, 200, 10)
-    Rover.worldmap[world_navigable_x, world_navigable_y, 2] += 1
+    if (Rover.pitch > 356 or Rover.pitch < 4) and (Rover.roll > 356 or Rover.roll < 4):
+        world_navigable_x, world_navigable_y = transform.to_world(*rover_navigable, *Rover.pos, Rover.yaw, 200, 10)
+        Rover.worldmap[world_navigable_y, world_navigable_x, 2] += 10
+
+        rover_obstacle = transform.image_to_rover(obstacle)
+        world_obstacle_x, world_obstacle_y = transform.to_world(*rover_obstacle, *Rover.pos, Rover.yaw, 200, 10)
+        Rover.worldmap[world_obstacle_y, world_obstacle_x, 0] += 1
+        Rover.worldmap[world_obstacle_y, world_obstacle_x, 2] -= 0.5
 
     # 8) Convert rover-centric pixel positions to polar coordinates
     # Update Rover pixel distances and angles

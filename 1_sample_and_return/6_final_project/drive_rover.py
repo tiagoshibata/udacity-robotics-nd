@@ -150,7 +150,7 @@ def connect(sid, environ):
 
 def send_control(commands, image_string1, image_string2):
     # Define commands to be sent to the rover
-    data={
+    data = {
         'throttle': commands[0].__str__(),
         'brake': commands[1].__str__(),
         'steering_angle': commands[2].__str__(),
