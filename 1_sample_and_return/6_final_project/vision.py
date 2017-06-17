@@ -32,10 +32,15 @@ class Vision:
         return self.binary_mask(img, under_thresh)
 
     def perspective_transform(self, img):
-        return cv2.warpPerspective(img, self.perspective_matrix, (img.shape[1], img.shape[0]))
+        warped = cv2.warpPerspective(img, self.perspective_matrix, (img.shape[1], img.shape[0]))
+        warped[0:img.shape[0] // 3, :] = 0
+        warped[:, :img.shape[1] // 5] = 0
+        warped[:, -img.shape[1] // 5:] = 0
+        return warped
 
     def process(self, img):
-        obstacle = self.perspective_transform(self.low_threshold(img, (10, 10, 10)))
         rock = self.perspective_transform(self.low_threshold(img, (10, 30, 30)))
-        navigable = self.perspective_transform(self.high_threshold(img, (160, 160, 160)))
+        navigable = self.high_threshold(img, (160, 160, 160))
+        obstacle = self.perspective_transform(1 - navigable)
+        navigable = self.perspective_transform(navigable)
         return obstacle, rock, navigable
