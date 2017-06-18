@@ -32,13 +32,15 @@ class Vision:
         return self.binary_mask(img, under_thresh)
 
     def rock_threshold(self, img):
-        low = (110, 110, 110)
-        high = (10, 80, 80)
+        low = (140, 140, 140)
+        high = (5, 70, 70)
         under_thresh = (img[:, :, 0] < low[0]) & (img[:, :, 1] < low[1]) & (img[:, :, 2] < low[2])
         above_thresh = (img[:, :, 0] > high[0]) & (img[:, :, 1] > high[1]) & (img[:, :, 2] > high[2])
         rocks = np.ones_like(img[:, :, 0])
+        rocks[0:img.shape[0] // 2, :] = 0
         rocks[under_thresh] = 0
         rocks[above_thresh] = 0
+        return rocks
 
     def perspective_transform(self, img):
         warped = cv2.warpPerspective(img, self.perspective_matrix, (img.shape[1], img.shape[0]))

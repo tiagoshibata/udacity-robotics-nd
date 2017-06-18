@@ -23,7 +23,7 @@ def perception_step(Rover):
     navigation_map = Rover.navigation_map
     navigation_map.add_rock(world_rock_x, world_rock_y)
 
-    if len(rover_rock.nonzero()[0]):
+    if len(rover_rock[0].nonzero()[0]):
         _, Rover.rock_angle = transform.to_polar_coords(*rover_rock)
     else:
         Rover.rock_angle = None

@@ -13,8 +13,8 @@ class NavigationMap:
     def add_obstacle(self, x_list, y_list):
         self.map[y_list, x_list] -= y_list
 
-    def add_rock(self, rock):
-        self.rock += rock
+    def add_rock(self, x_list, y_list):
+        self.rock[y_list, x_list] += 1
 
     def reset(self):
         self.map = np.zeros((200, 200), dtype=np.float)

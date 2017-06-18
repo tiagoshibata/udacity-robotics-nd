@@ -50,20 +50,19 @@ def follow_path(Rover, path):
     global target_yaw
     target = path[:5][-1]  # Read up to 4 steps in advance
     dy, dx = target[0] - Rover.pos[1], target[1] - Rover.pos[0]
-    yaw = 180 / pi * atan2(dy, dx)
+    target_yaw = 180 / pi * atan2(dy, dx)
 
     Rover.throttle_set = 0.6
     forward(Rover)
-    diff = angle_diff(yaw, Rover.yaw)
-    print('yaw = {}, target = {}, diff = {}'.format(Rover.yaw, yaw, diff))
+    diff = angle_diff(target_yaw, Rover.yaw)
+    print('yaw = {}, target = {}, diff = {}'.format(Rover.yaw, target_yaw, diff))
     if abs(diff) > 50:
         print('Rover not following path - forcing alignment')
         aligning = True
-        rotate_to_angle(Rover, yaw)
-        target_yaw = yaw
+        rotate_to_angle(Rover, target_yaw)
     else:
         print('follow_wall')
-        follow_wall(Rover, yaw)
+        follow_wall(Rover, target_yaw)
 
 
 def forward(Rover):
@@ -86,7 +85,8 @@ def follow_wall(Rover, target_yaw):
                     Rover.throttle = 0
                     Rover.brake = 0
                 # Set steering to average angle clipped to the range +/- 15
-                Rover.steer = np.clip((np.mean(Rover.nav_angles) + angle_diff(target_yaw, Rover.yaw) / 10) * 180 / np.pi, -15, 15)
+                print('direction: {} {}'.format(np.mean(Rover.nav_angles) / 4, -angle_diff(target_yaw, Rover.yaw) / 30))
+                Rover.steer = np.clip((np.mean(Rover.nav_angles) / 4 + angle_diff(target_yaw, Rover.yaw) / 10) * 180 / np.pi, -15, 15)
             # If there's a lack of navigable terrain pixels then go to 'stop' mode
             elif len(Rover.nav_angles) < Rover.stop_forward:
                     # Set mode to "stop" and hit the brakes!
@@ -137,17 +137,6 @@ def decision_step(Rover):
 
     frames_to_path_trace -= 1
 
-    if Rover.near_sample:
-        Rover.throttle = Rover.steer = 0
-        Rover.brake = 1
-        if Rover.vel == 0 and not Rover.picking_up:
-            Rover.send_pickup = True
-        return Rover
-    elif Rover.rock_angle is not None:
-        forward()
-        Rover.steer = np.clip(np.mean(Rover.rock_angle) * 180 / np.pi, -15, 15)
-        return Rover
-
     going_home = Rover.samples_found == Rover.samples_to_find - 1
     if going_home:
         if a_star.distance(Rover.pos, Rover.start_pos) < 10:
@@ -155,10 +144,15 @@ def decision_step(Rover):
             Rover.throttle = Rover.steer = 0
             return Rover
 
-    if Rover.throttle and abs(Rover.vel) < 0.2:
+    if (stuck >= 20 or Rover.throttle) and abs(Rover.vel) < 0.2:
         stuck += 1
-        if stuck > 50:
+        if stuck > 60:
             stuck = 0
+        elif stuck > 40:
+            print('Rover stuck - throttle')
+            Rover.throttle = -1
+            Rover.steer = 0
+            return Rover
         elif stuck > 20:
             print('Rover stuck')
             Rover.throttle = 0
@@ -169,6 +163,19 @@ def decision_step(Rover):
             return Rover
     else:
         stuck = 0
+
+    if Rover.near_sample:
+        Rover.throttle = Rover.steer = 0
+        Rover.brake = 1
+        if Rover.vel == 0 and not Rover.picking_up:
+            Rover.send_pickup = True
+        return Rover
+    elif Rover.rock_angle is not None:
+        print("Chasing rock")
+        forward(Rover)
+        Rover.steer = np.clip(np.mean(Rover.rock_angle) * 180 / np.pi, -15, 15)
+        return Rover
+
     if aligning:
         if abs(angle_diff(target_yaw, Rover.yaw)) < 10:
             aligning = False
