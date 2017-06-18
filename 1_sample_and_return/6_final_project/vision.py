@@ -31,23 +31,32 @@ class Vision:
         under_thresh = (img[:, :, 0] < thresh[0]) & (img[:, :, 1] < thresh[1]) & (img[:, :, 2] < thresh[2])
         return self.binary_mask(img, under_thresh)
 
+    def rock_threshold(self, img):
+        low = (110, 110, 110)
+        high = (10, 80, 80)
+        under_thresh = (img[:, :, 0] < low[0]) & (img[:, :, 1] < low[1]) & (img[:, :, 2] < low[2])
+        above_thresh = (img[:, :, 0] > high[0]) & (img[:, :, 1] > high[1]) & (img[:, :, 2] > high[2])
+        rocks = np.ones_like(img[:, :, 0])
+        rocks[under_thresh] = 0
+        rocks[above_thresh] = 0
+
     def perspective_transform(self, img):
         warped = cv2.warpPerspective(img, self.perspective_matrix, (img.shape[1], img.shape[0]))
         return warped
 
     def process(self, img):
-        rock = self.perspective_transform(self.low_threshold(img, (10, 30, 30)))
+        rock = self.perspective_transform(self.rock_threshold(img))
 
         navigable = self.high_threshold(img, (160, 160, 160))
         obstacle = self.perspective_transform(1 - navigable)
 
         navigable = self.perspective_transform(navigable)
-        navigable[0:img.shape[0] // 3, :] = 0
+        navigable[0:2 * img.shape[0] // 3, :] = 0
         navigable[:, :img.shape[1] // 5] = 0
         navigable[:, -img.shape[1] // 5:] = 0
 
         obstacle[0:2 * img.shape[0] // 3, :] = 0
-        obstacle[:, :img.shape[1] // 3] = 0
-        obstacle[:, -img.shape[1] // 3:] = 0
+        obstacle[:, :img.shape[1] // 4] = 0
+        obstacle[:, -img.shape[1] // 4:] = 0
 
         return obstacle, rock, navigable

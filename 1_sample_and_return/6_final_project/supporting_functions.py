@@ -12,8 +12,10 @@ def convert_to_float(string_to_convert):
 
 
 def update_rover(Rover, data):
+    Rover.pos = tuple(convert_to_float(pos.strip()) for pos in data["position"].split(';'))
     if not Rover.start_time:
         Rover.start_time = time.time()
+        Rover.start_pos = Rover.pos
         Rover.total_time = 0
         samples_xpos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_x"].split(';')])
         samples_ypos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_y"].split(';')])
@@ -24,12 +26,11 @@ def update_rover(Rover, data):
         if np.isfinite(tot_time):
             Rover.total_time = tot_time
     # Print out the fields in the telemetry data dictionary
-    print(data.keys())
-    print(data["position"])
+    # print(data.keys())
+    # print('Position: {}'.format(data["position"]))
     # The current speed of the rover in m/s
     Rover.vel = convert_to_float(data["speed"])
     # The current position of the rover
-    Rover.pos = tuple(convert_to_float(pos.strip()) for pos in data["position"].split(';'))
     # The current yaw angle of the rover
     Rover.yaw = convert_to_float(data["yaw"])
     # The current yaw angle of the rover
@@ -47,11 +48,11 @@ def update_rover(Rover, data):
     # Update number of rocks found
     Rover.samples_found = Rover.samples_to_find - np.int(data["sample_count"])
 
-    print('speed =', Rover.vel, 'position =', Rover.pos, 'throttle =',
-          Rover.throttle, 'steer_angle =', Rover.steer, 'near_sample:', Rover.near_sample,
-          'picking_up:', data["picking_up"], 'sending pickup:', Rover.send_pickup,
-          'total time:', Rover.total_time, 'samples remaining:', data["sample_count"],
-          'samples found:', Rover.samples_found)
+    # print('speed =', Rover.vel, 'position =', Rover.pos, 'throttle =',
+    #       Rover.throttle, 'steer_angle =', Rover.steer, 'near_sample:', Rover.near_sample,
+    #       'picking_up:', data["picking_up"], 'sending pickup:', Rover.send_pickup,
+    #       'total time:', Rover.total_time, 'samples remaining:', data["sample_count"],
+    #       'samples found:', Rover.samples_found)
     # Get the current image from the center camera of the rover
     imgString = data["image"]
     image = Image.open(BytesIO(base64.b64decode(imgString)))
