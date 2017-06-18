@@ -18,18 +18,23 @@ def perception_step(Rover):
     #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
     rover_navigable = transform.image_to_rover(navigable)
     if (Rover.pitch > 356 or Rover.pitch < 4) and (Rover.roll > 356 or Rover.roll < 4):
+        navigation_map = Rover.navigation_map
+        rover_x, rover_y = round(Rover.pos[0]), round(Rover.pos[1])
+        navigation_map.map[rover_y, rover_x] = 1e8
         world_navigable_x, world_navigable_y = transform.to_world(*rover_navigable, *Rover.pos, Rover.yaw, 200, 10)
-        Rover.worldmap[world_navigable_y, world_navigable_x, 2] += 10
+        navigation_map.add_navigable(world_navigable_x, world_navigable_y)
 
         rover_obstacle = transform.image_to_rover(obstacle)
         world_obstacle_x, world_obstacle_y = transform.to_world(*rover_obstacle, *Rover.pos, Rover.yaw, 200, 10)
-        Rover.worldmap[world_obstacle_y, world_obstacle_x, 0] += 1
-        Rover.worldmap[world_obstacle_y, world_obstacle_x, 2] -= 0.5
+        navigation_map.add_obstacle(world_obstacle_x, world_obstacle_y)
+        navigation_map.update()
+        Rover.navigation_map = navigation_map
 
-    # 8) Convert rover-centric pixel positions to polar coordinates
-    # Update Rover pixel distances and angles
-    # Rover.nav_dists = rover_centric_pixel_distances
-    # Rover.nav_angles = rover_centric_angles
+        Rover.worldmap[:, :, 0] = navigation_map.undiscovered_paths()
+        # Rover.worldmap[:, :, 0] = navigation_map.obstacle
+        # Rover.worldmap[:, :, 1] = map_rocks
+        Rover.worldmap[:, :, 2] = navigation_map.navigable
+
     dist, angles = transform.to_polar_coords(*rover_navigable)
     Rover.nav_dists = dist
     Rover.nav_angles = angles

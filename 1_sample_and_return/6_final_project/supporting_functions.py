@@ -29,7 +29,7 @@ def update_rover(Rover, data):
     # The current speed of the rover in m/s
     Rover.vel = convert_to_float(data["speed"])
     # The current position of the rover
-    Rover.pos = [convert_to_float(pos.strip()) for pos in data["position"].split(';')]
+    Rover.pos = tuple(convert_to_float(pos.strip()) for pos in data["position"].split(';'))
     # The current yaw angle of the rover
     Rover.yaw = convert_to_float(data["yaw"])
     # The current yaw angle of the rover
@@ -68,12 +68,12 @@ def create_output_images(Rover):
         nav_pix = Rover.worldmap[:, :, 2] > 0
         navigable = Rover.worldmap[:, :, 2] * (255 / np.mean(Rover.worldmap[nav_pix, 2]))
     else:
-        navigable = Rover.worldmap[:, :, 2]
+        navigable = 255 * Rover.worldmap[:, :, 2]
     if np.max(Rover.worldmap[:, :, 0]) > 0:
         obs_pix = Rover.worldmap[:, :, 0] > 0
         obstacle = Rover.worldmap[:, :, 0] * (255 / np.mean(Rover.worldmap[obs_pix, 0]))
     else:
-        obstacle = Rover.worldmap[:, :, 0]
+        obstacle = 255 * Rover.worldmap[:, :, 0]
 
     likely_nav = navigable >= obstacle
     obstacle[likely_nav] = 0
@@ -108,7 +108,7 @@ def create_output_images(Rover):
     # Next figure out how many of those correspond to ground truth pixels
     good_nav_pix = np.float(len(((plotmap[:, :, 2] > 0) & (Rover.ground_truth[:, :, 1] > 0)).nonzero()[0]))
     # Next find how many do not correspond to ground truth pixels
-    bad_nav_pix = np.float(len(((plotmap[:, :, 2] > 0) & (Rover.ground_truth[:, :, 1] == 0)).nonzero()[0]))
+    # bad_nav_pix = np.float(len(((plotmap[:, :, 2] > 0) & (Rover.ground_truth[:, :, 1] == 0)).nonzero()[0]))
     # Grab the total number of map pixels
     tot_map_pix = np.float(len((Rover.ground_truth[:, :, 1].nonzero()[0])))
     # Calculate the percentage of ground truth map that has been successfully found
