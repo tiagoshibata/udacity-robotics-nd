@@ -33,14 +33,21 @@ class Vision:
 
     def perspective_transform(self, img):
         warped = cv2.warpPerspective(img, self.perspective_matrix, (img.shape[1], img.shape[0]))
-        warped[0:img.shape[0] // 3, :] = 0
-        warped[:, :img.shape[1] // 5] = 0
-        warped[:, -img.shape[1] // 5:] = 0
         return warped
 
     def process(self, img):
         rock = self.perspective_transform(self.low_threshold(img, (10, 30, 30)))
+
         navigable = self.high_threshold(img, (160, 160, 160))
         obstacle = self.perspective_transform(1 - navigable)
+
         navigable = self.perspective_transform(navigable)
+        navigable[0:img.shape[0] // 3, :] = 0
+        navigable[:, :img.shape[1] // 5] = 0
+        navigable[:, -img.shape[1] // 5:] = 0
+
+        obstacle[0:2 * img.shape[0] // 3, :] = 0
+        obstacle[:, :img.shape[1] // 3] = 0
+        obstacle[:, -img.shape[1] // 3:] = 0
+
         return obstacle, rock, navigable
